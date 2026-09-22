@@ -62,7 +62,7 @@ _FACT_SHEET_FIELDS = (
 
 _DISCOVERY_TEMPLATE = (
     "PHASE 1 - GAME DISCOVERY. Produce a compact fact sheet for the game "
-    \"{game}\" (endless runner / action-adventure mobile category). Cover: "
+    '"{game}" (endless runner / action-adventure mobile category). Cover: '
     + _FACT_SHEET_FIELDS
     + ".\nTag every factual statement. Prefer verified public information; "
     "when you are reasoning rather than reporting, tag [INFERENCE]; when you "
