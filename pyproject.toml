@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gameresearch-ai"
+version = "0.1.0"
+description = "GameResearch AI — autonomous AAA mobile-game deep research and original game design agent (proprietary, source-available)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary — All rights reserved. See LICENSE." }
+authors = [{ name = "GameResearch AI" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["gameres*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
