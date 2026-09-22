@@ -16,7 +16,7 @@ Initial release of the game-research agent.
   graceful degradation; CannedSearch for offline runs.
 - LocalGate: cloud-first loading gate for local Qwen3-0.6B via a llama.cpp
   binding point (StubLocalRuntime in tests; native binding on roadmap).
-- 28 offline tests; live runner example; CI workflow.
+- 30 offline tests; offline + live examples; CI and live-check workflows.
 
 ### Not yet implemented (roadmap)
 - Real llama.cpp native binding; Blender/Godot asset pipeline; automated

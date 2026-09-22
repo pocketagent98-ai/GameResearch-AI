@@ -1,0 +1,45 @@
+name: Live NVIDIA NIM check
+
+# Manual only (workflow_dispatch) — runs the REAL pipeline against the
+# NVIDIA NIM API using the NVIDIA_API_KEY repository secret.
+# The secret is never printed; the key is never stored in the repo.
+
+on:
+  workflow_dispatch:
+    inputs:
+      quick:
+        description: 'Quick run (3 reference games)'
+        type: boolean
+        default: true
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - name: Offline test suite first
+        run: python -m pytest
+      - name: Live NIM connection + research run
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        run: |
+          if [ -z "$NVIDIA_API_KEY" ]; then
+            echo "NVIDIA_API_KEY secret not set — skipping live call."; exit 1
+          fi
+          QUICK=""
+          if [ "${{ github.event.inputs.quick }}" = "true" ]; then QUICK="--quick"; fi
+          python examples/live_nim_research.py $QUICK > live_report.md
+          head -60 live_report.md
+          echo "---"
+          echo "Report length: $(wc -l < live_report.md) lines"
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-research-report
+          path: live_report.md
+          if-no-files-found: ignore
