@@ -9,7 +9,8 @@ Usage:
 
 Options:
     --model   pick a specific NIM model id (default: auto-select from
-              /v1/models, preferring a small instruct model)
+              /v1/models, preferring a small instruct model, verified
+              with a tiny probe call)
     --quick   3 reference games instead of 12 (fewer tokens)
 
 The run prints a markdown research report to stdout.
@@ -30,20 +31,48 @@ from gameres.search import DuckDuckGoSearch
 
 PREFERRED = [
     "meta/llama-3.1-8b-instruct",
+    "meta/llama-3.3-70b-instruct",
     "meta/llama-3.1-70b-instruct",
     "mistralai/mistral-7b-instruct-v0.3",
-    "meta/llama-3.3-70b-instruct",
+    "google/gemma-2-9b-it",
+    "microsoft/phi-3-small-8k-instruct",
 ]
 
 
-def pick_model(available: list) -> str:
+def pick_model(available: list, tried: set) -> str:
+    """Pick the first PREFERRED model present and not yet tried; then any
+    remaining instruct model; then anything."""
     for pref in PREFERRED:
-        if pref in available:
+        if pref in available and pref not in tried:
             return pref
-    instruct = [m for m in available if "instruct" in m.lower()]
-    if instruct:
-        return instruct[0]
-    return available[0] if available else "meta/llama-3.1-8b-instruct"
+    for m in available:
+        if "instruct" in m.lower() and m not in tried:
+            return m
+    for m in available:
+        if m not in tried:
+            return m
+    raise SystemExit("no callable model found on this key")
+
+
+def verified_model(client: NIMClient, available: list) -> str:
+    """A model can be LISTED on a key but not callable (404 on invoke).
+    Probe each candidate with a tiny chat call and use the first that
+    actually responds."""
+    tried: set = set()
+    last_error = None
+    for _ in range(len(available)):
+        model = pick_model(available, tried)
+        tried.add(model)
+        probe = NIMClient(api_key=client._key, model=model, max_retries=0)
+        try:
+            reply = probe.chat("Reply with the single word: OK", max_tokens=8)
+            if reply.strip():
+                print(f"Model probe OK: {model}", file=sys.stderr)
+                return model
+        except Exception as exc:
+            last_error = exc
+            print(f"Model not callable, trying next: {model}", file=sys.stderr)
+    raise SystemExit(f"no callable model found; last error: {last_error}")
 
 
 def main() -> int:
@@ -69,7 +98,7 @@ def main() -> int:
         return 1
     print(f"OK — {len(models)} models visible on this key.", file=sys.stderr)
 
-    model = args.model or pick_model(models)
+    model = args.model or verified_model(client, models)
     print(f"Using model: {model}", file=sys.stderr)
     client = NIMClient(api_key=api_key, model=model)
 
